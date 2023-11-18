@@ -1,0 +1,20 @@
+name: get recommendations
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run_program:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v4.0.1
+        with:
+          go-version: 1.21.x
+
+      - name: Build and run program
+        run: |
+          go run $(ls -1 *.go | grep -v _test.go) -id ${{ secrets.USER_ID }} -cookie ${{ secrets.USER_COOKIE }}

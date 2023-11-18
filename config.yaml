@@ -1,0 +1,9 @@
+user:
+  id: input_your_id
+  cookie: input_your_cookie
+
+result:
+  # movie or book
+  media_type: movie
+  mention:
+    more_than: 0
