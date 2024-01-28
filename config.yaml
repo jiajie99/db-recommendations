@@ -4,6 +4,6 @@ user:
 
 result:
   # movie or book
-  media_type: movie
+  media_type: book
   mention:
     more_than: 0
