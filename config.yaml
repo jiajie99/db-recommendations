@@ -3,7 +3,9 @@ user:
   cookie: input_your_cookie
 
 result:
-  # movie or book
-  media_type: movie
+  media_type: movie  # movie or book
   mention:
-    more_than: 0
+    min: 0
+  score:
+    min: 8.9
+  sort: score # score or mention

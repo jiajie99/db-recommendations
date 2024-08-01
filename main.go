@@ -26,7 +26,9 @@ func initConfig() {
 	ID = viper.GetString("user.id")
 	Cookie = viper.GetString("user.cookie")
 	MediaType = viper.GetString("result.media_type")
-	MinMentionTimes = viper.GetInt("result.mention.more_than")
+	MinMentionTimes = viper.GetInt("result.mention.min")
+	MinScore = viper.GetFloat64("result.score.min")
+	SortBy = viper.GetString("result.sort")
 	checkConfig()
 }
 
@@ -138,12 +140,25 @@ func buildResult(medias []*Media) []MediaInfo {
 	})
 	// Filter illegal medias.
 	mediaSlice = lo.Filter(mediaSlice, func(m MediaInfo, _ int) bool {
-		return m.Relevance > MinMentionTimes && !slices.Contains(analyticsMediaIDs, m.ID)
+		return m.Relevance > MinMentionTimes &&
+			m.Rate > MinScore &&
+			!slices.Contains(analyticsMediaIDs, m.ID)
 	})
-	// Sort by relevance.
-	slices.SortFunc(mediaSlice, func(a, b MediaInfo) int {
-		return cmp.Compare(b.Relevance, a.Relevance)
-	})
+	if SortBy == "rate" {
+		slices.SortFunc(mediaSlice, func(a, b MediaInfo) int {
+			if b.Rate == a.Rate {
+				return cmp.Compare(b.Relevance, a.Relevance)
+			}
+			return cmp.Compare(b.Rate, a.Rate)
+		})
+	} else if SortBy == "relevance" {
+		slices.SortFunc(mediaSlice, func(a, b MediaInfo) int {
+			if b.Relevance == a.Relevance {
+				return cmp.Compare(b.Rate, a.Rate)
+			}
+			return cmp.Compare(b.Relevance, a.Relevance)
+		})
+	}
 	return mediaSlice
 }
 
