@@ -144,7 +144,7 @@ func buildResult(medias []*Media) []MediaInfo {
 			m.Rate > MinScore &&
 			!slices.Contains(analyticsMediaIDs, m.ID)
 	})
-	if SortBy == "rate" {
+	if SortBy == "score" {
 		slices.SortFunc(mediaSlice, func(a, b MediaInfo) int {
 			if b.Rate == a.Rate {
 				return cmp.Compare(b.Relevance, a.Relevance)
