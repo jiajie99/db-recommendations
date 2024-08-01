@@ -1,8 +1,9 @@
 package main
 
 var (
-	ID, Cookie, MediaType string
-	MinMentionTimes       int
+	ID, Cookie, MediaType, SortBy string
+	MinMentionTimes               int
+	MinScore                      float64
 )
 
 const (
