@@ -6,4 +6,4 @@ result:
   # movie or book
   media_type: movie
   mention:
-    more_than: 0
+    more_than: 9
