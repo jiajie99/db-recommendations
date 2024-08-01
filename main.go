@@ -151,7 +151,7 @@ func buildResult(medias []*Media) []MediaInfo {
 			}
 			return cmp.Compare(b.Rate, a.Rate)
 		})
-	} else if SortBy == "relevance" {
+	} else if SortBy == "mention" {
 		slices.SortFunc(mediaSlice, func(a, b MediaInfo) int {
 			if b.Relevance == a.Relevance {
 				return cmp.Compare(b.Rate, a.Rate)
