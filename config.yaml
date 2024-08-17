@@ -7,5 +7,5 @@ result:
   mention:
     min: 0
   score:
-    min: 9.4
+    min: 7.9
   sort: score # score or mention
