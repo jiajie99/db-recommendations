@@ -8,4 +8,4 @@ result:
     min: 0
   score:
     min: 8.9
-  sort: score # score or mention
+  sort: mention # score or mention
