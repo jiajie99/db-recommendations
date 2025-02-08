@@ -260,7 +260,7 @@ func getRespBody(path string, useCookie bool) io.ReadCloser {
 		log.Fatalln(err)
 	}
 	if res.StatusCode != http.StatusOK {
-		log.Fatalln("get unexpected status code", res.StatusCode)
+		log.Println("get unexpected status code", res.StatusCode)
 	}
 	return res.Body
 }
