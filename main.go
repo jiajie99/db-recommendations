@@ -95,6 +95,28 @@ func getMedias(links []string) []*Media {
 	return medias
 }
 
+func getMediasSerial(links []string) []*Media {
+	var medias []*Media
+	for _, link := range links {
+		medias = append(medias, getMediaInfoSerial(link))
+		//// 设置随机种子
+		//rand.Seed(time.Now().UnixNano())
+		//
+		//// 生成一个随机的秒数，假设我们希望在 5 到 15 秒之间随机暂停
+		//minSleep := 1
+		//maxSleep := 3
+		//randomSleep := rand.Intn(maxSleep-minSleep+1) + minSleep
+		//
+		//fmt.Printf("Sleeping for %d seconds...\n", randomSleep)
+		//
+		//// 暂停程序执行
+		//time.Sleep(time.Duration(randomSleep) * time.Second)
+
+	}
+	log.Printf("successfully analytics %d %ss you've marked", len(medias), MediaType)
+	return medias
+}
+
 func buildRelationships(recommendations []*Media) map[string][]string {
 	relationships := make(map[string][]string)
 	for _, r := range recommendations {
@@ -193,6 +215,18 @@ func prepareMediaLinks() []string {
 		go func(i int) {
 			getPersonalMarkMediaLinks(i, ch)
 		}(i)
+		//// 设置随机种子
+		//rand.Seed(time.Now().UnixNano())
+		//
+		//// 生成一个随机的秒数，假设我们希望在 5 到 15 秒之间随机暂停
+		//minSleep := 1
+		//maxSleep := 3
+		//randomSleep := rand.Intn(maxSleep-minSleep+1) + minSleep
+		//
+		//fmt.Printf("Sleeping for %d seconds...\n", randomSleep)
+		//
+		//// 暂停程序执行
+		//time.Sleep(time.Duration(randomSleep) * time.Second)
 	}
 
 	go func() {
@@ -224,6 +258,9 @@ func getRespBody(path string, useCookie bool) io.ReadCloser {
 	res, err := http.DefaultClient.Do(request)
 	if err != nil {
 		log.Fatalln(err)
+	}
+	if res.StatusCode != http.StatusOK {
+		log.Fatalln("get unexpected status code", res.StatusCode)
 	}
 	return res.Body
 }
@@ -318,6 +355,65 @@ func getMediaInfo(path string, ch chan<- *Media) {
 	})
 
 	ch <- &Media{
+		OriginalMedia: &MediaInfo{
+			ID:   getNum(path),
+			Name: originalName,
+			Link: path,
+		},
+		RecommendedMedias: medias,
+	}
+}
+
+func getMediaInfoSerial(path string) *Media {
+	body := getRespBody(path, true)
+	defer body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	var originalName string
+	var sel *goquery.Selection
+	switch MediaType {
+	case "book":
+		originalName = doc.Find("#wrapper > h1 > span").Text()
+		sel = doc.Find("#db-rec-section > div > dl")
+	case "movie":
+		originalName = doc.Find("#content > h1 > span:nth-child(1)").Text()
+		sel = doc.Find("#recommendations > div > dl")
+	}
+
+	if sel.Length() == 0 {
+		log.Printf("get recommended %ss for《%s》failed, link: %s\n", MediaType, originalName, path)
+		return nil
+	}
+
+	medias := make([]*MediaInfo, 0, sel.Length())
+	sel.Each(func(i int, s *goquery.Selection) {
+		name := strings.TrimSpace(s.Find("dd > a").Text())
+		if name == "" {
+			return
+		}
+		link, exists := s.Find("dd > a").Attr("href")
+		if !exists {
+			log.Printf("failed to get link for《%s》\n", name)
+			return
+		}
+		var rate float64
+		rateStr := s.Find("dd > span").Text()
+		if rateStr != "" {
+			rate, _ = strconv.ParseFloat(s.Find("dd > span").Text(), 64)
+		}
+		medias = append(medias, &MediaInfo{
+			ID:   getNum(link),
+			Name: name,
+			Link: link,
+			Rate: rate,
+		})
+	})
+
+	return &Media{
 		OriginalMedia: &MediaInfo{
 			ID:   getNum(path),
 			Name: originalName,
