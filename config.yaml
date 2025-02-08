@@ -9,3 +9,6 @@ result:
   score:
     min: 7.9
   sort: mention # score or mention
+
+target_user: 
+  id: tan-mu

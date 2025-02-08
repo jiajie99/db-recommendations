@@ -3,6 +3,7 @@ module db-recommendations
 go 1.21.3
 
 require (
+	github.com/EDDYCJY/fake-useragent v0.2.0
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/samber/lo v1.38.1
 	github.com/spf13/viper v1.17.0

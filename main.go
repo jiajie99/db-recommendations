@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 
+	browser "github.com/EDDYCJY/fake-useragent"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
@@ -29,6 +30,7 @@ func initConfig() {
 	MinMentionTimes = viper.GetInt("result.mention.min")
 	MinScore = viper.GetFloat64("result.score.min")
 	SortBy = viper.GetString("result.sort")
+	TargetUserID = viper.GetString("target_user.id")
 	checkConfig()
 }
 
@@ -214,7 +216,7 @@ func getRespBody(path string, useCookie bool) io.ReadCloser {
 		log.Fatalln(err)
 	}
 	request.Header = http.Header{
-		"User-Agent": []string{UserAgent},
+		"User-Agent": []string{browser.Random()},
 	}
 	if useCookie {
 		request.Header["Cookie"] = []string{Cookie}
@@ -227,7 +229,7 @@ func getRespBody(path string, useCookie bool) io.ReadCloser {
 }
 
 func getPersonalMarkMediaTotal() int {
-	path := fmt.Sprintf(PersonalMainPageUrl, MediaType, ID, 0)
+	path := fmt.Sprintf(PersonalMainPageUrl, MediaType, TargetUserID, 0)
 	body := getRespBody(path, true)
 	defer body.Close()
 
@@ -246,7 +248,7 @@ func getPersonalMarkMediaTotal() int {
 }
 
 func getPersonalMarkMediaLinks(start int, ch chan<- []string) {
-	path := fmt.Sprintf(PersonalMainPageUrl, MediaType, ID, start)
+	path := fmt.Sprintf(PersonalMainPageUrl, MediaType, TargetUserID, start)
 	body := getRespBody(path, true)
 	defer body.Close()
 
