@@ -279,7 +279,7 @@ func getRespBody(path string, useCookie, refererURL bool) io.ReadCloser {
 		log.Fatalln(err)
 	}
 	if res.StatusCode != http.StatusOK {
-		log.Println("get unexpected status code", res.StatusCode)
+		//log.Println("get unexpected status code", res.StatusCode)
 	}
 	return res.Body
 }
@@ -352,7 +352,7 @@ func getMediaInfo(paths []string, ch chan<- []*Media) {
 		}
 
 		if sel.Length() == 0 {
-			log.Printf("get recommended %ss for《%s》failed, link: %s\n", MediaType, originalName, path)
+			//log.Printf("get recommended %ss for《%s》failed, link: %s\n", MediaType, originalName, path)
 			continue
 		}
 
