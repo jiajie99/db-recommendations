@@ -292,7 +292,7 @@ func getPersonalMarkMediaTotal() int {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(string(bodyBytes))
+	//fmt.Println(string(bodyBytes))
 
 	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(bodyBytes))
 	if err != nil {
