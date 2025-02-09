@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"cmp"
+	"crypto/rand"
 	"flag"
 	"fmt"
 	"io"
 	"log"
+	"math/big"
 	"net/http"
 	"regexp"
 	"slices"
@@ -250,6 +252,10 @@ func getRespBody(path string, useCookie bool, refererURL string) io.ReadCloser {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	bid, err := generateRandomBid(11)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	request.Header = http.Header{
 		"User-Agent": []string{browser.Random()},
 		"Accept": []string{
@@ -259,9 +265,10 @@ func getRespBody(path string, useCookie bool, refererURL string) io.ReadCloser {
 		"Accept-Language": []string{`zh-CN,zh;q=0.9`},
 		"Cache-Control":   []string{`max-age=0`},
 		"Priority":        []string{`u=0, i`},
+		"Cookie":          []string{fmt.Sprintf("bid=%s", bid)},
 	}
 	if useCookie {
-		request.Header["Cookie"] = []string{Cookie}
+		request.Header["Cookie"] = []string{fmt.Sprintf("%s; bid=%s", Cookie, bid)}
 	}
 	//if refererURL != "" {
 	//	request.Header["Referer"] = []string{refererURL}
@@ -444,4 +451,17 @@ func getNum(path string) string {
 	pattern := `(\d+)`
 	re := regexp.MustCompile(pattern)
 	return re.FindString(path)
+}
+
+func generateRandomBid(length int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	result := make([]byte, length)
+	for i := range result {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", err
+		}
+		result[i] = charset[num.Int64()]
+	}
+	return string(result), nil
 }
