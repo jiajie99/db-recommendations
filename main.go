@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"cmp"
 	"flag"
 	"fmt"
@@ -270,7 +271,13 @@ func getPersonalMarkMediaTotal() int {
 	body := getRespBody(path, true)
 	defer body.Close()
 
-	doc, err := goquery.NewDocumentFromReader(body)
+	bodyBytes, err := io.ReadAll(body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(string(bodyBytes))
+
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(bodyBytes))
 	if err != nil {
 		log.Fatalln(err)
 	}
