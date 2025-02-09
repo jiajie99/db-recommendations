@@ -245,17 +245,27 @@ func prepareMediaLinks() []string {
 	return paths
 }
 
-func getRespBody(path string, useCookie bool) io.ReadCloser {
+func getRespBody(path string, useCookie bool, refererURL string) io.ReadCloser {
 	request, err := http.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	request.Header = http.Header{
 		"User-Agent": []string{browser.Random()},
+		"Accept": []string{
+			`text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7`,
+		},
+		//"Accept-Encoding": []string{`gzip, deflate, br, zstd`},
+		"Accept-Language": []string{`zh-CN,zh;q=0.9`},
+		"Cache-Control":   []string{`max-age=0`},
+		"Priority":        []string{`u=0, i`},
 	}
 	if useCookie {
 		request.Header["Cookie"] = []string{Cookie}
 	}
+	//if refererURL != "" {
+	//	request.Header["Referer"] = []string{refererURL}
+	//}
 	res, err := http.DefaultClient.Do(request)
 	if err != nil {
 		log.Fatalln(err)
@@ -268,7 +278,7 @@ func getRespBody(path string, useCookie bool) io.ReadCloser {
 
 func getPersonalMarkMediaTotal() int {
 	path := fmt.Sprintf(PersonalMainPageUrl, MediaType, TargetUserID, 0)
-	body := getRespBody(path, true)
+	body := getRespBody(path, true, fmt.Sprintf(`https://%s.douban.com/people/%s/collect`, MediaType, TargetUserID))
 	defer body.Close()
 
 	bodyBytes, err := io.ReadAll(body)
@@ -293,7 +303,7 @@ func getPersonalMarkMediaTotal() int {
 
 func getPersonalMarkMediaLinks(start int, ch chan<- []string) {
 	path := fmt.Sprintf(PersonalMainPageUrl, MediaType, TargetUserID, start)
-	body := getRespBody(path, true)
+	body := getRespBody(path, true, fmt.Sprintf(`https://%s.douban.com/people/%s/collect`, MediaType, TargetUserID))
 	defer body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(body)
@@ -312,7 +322,7 @@ func getPersonalMarkMediaLinks(start int, ch chan<- []string) {
 }
 
 func getMediaInfo(path string, ch chan<- *Media) {
-	body := getRespBody(path, false)
+	body := getRespBody(path, false, "")
 	defer body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(body)
@@ -372,7 +382,7 @@ func getMediaInfo(path string, ch chan<- *Media) {
 }
 
 func getMediaInfoSerial(path string) *Media {
-	body := getRespBody(path, true)
+	body := getRespBody(path, true, "")
 	defer body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(body)
