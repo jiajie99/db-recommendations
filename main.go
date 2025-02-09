@@ -72,13 +72,14 @@ func getMaxStart(total int) int {
 }
 
 func getMedias(links []string) []*Media {
-	ch := make(chan *Media, len(links))
+	ch := make(chan []*Media, len(links))
 	wg := &sync.WaitGroup{}
-	wg.Add(len(links))
-	for i := range links {
-		go func(path string) {
-			getMediaInfo(path, ch)
-		}(links[i])
+	linksArr := lo.Chunk(links, 100)
+	wg.Add(len(linksArr))
+	for i := range linksArr {
+		go func(paths []string) {
+			getMediaInfo(paths, ch)
+		}(linksArr[i])
 	}
 
 	go func() {
@@ -89,7 +90,7 @@ func getMedias(links []string) []*Media {
 	var medias []*Media
 	for r := range ch {
 		if r != nil {
-			medias = append(medias, r)
+			medias = append(medias, r...)
 		}
 		wg.Done()
 	}
@@ -328,64 +329,67 @@ func getPersonalMarkMediaLinks(start int, ch chan<- []string) {
 	ch <- result
 }
 
-func getMediaInfo(path string, ch chan<- *Media) {
-	body := getRespBody(path, false, true)
-	defer body.Close()
+func getMediaInfo(paths []string, ch chan<- []*Media) {
+	res := make([]*Media, 0, len(paths))
+	for _, path := range paths {
+		body := getRespBody(path, false, true)
+		defer body.Close()
 
-	doc, err := goquery.NewDocumentFromReader(body)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	var originalName string
-	var sel *goquery.Selection
-	switch MediaType {
-	case "book":
-		originalName = doc.Find("#wrapper > h1 > span").Text()
-		sel = doc.Find("#db-rec-section > div > dl")
-	case "movie":
-		originalName = doc.Find("#content > h1 > span:nth-child(1)").Text()
-		sel = doc.Find("#recommendations > div > dl")
-	}
-
-	if sel.Length() == 0 {
-		log.Printf("get recommended %ss for《%s》failed, link: %s\n", MediaType, originalName, path)
-		ch <- nil
-		return
-	}
-
-	medias := make([]*MediaInfo, 0, sel.Length())
-	sel.Each(func(i int, s *goquery.Selection) {
-		name := strings.TrimSpace(s.Find("dd > a").Text())
-		if name == "" {
-			return
+		doc, err := goquery.NewDocumentFromReader(body)
+		if err != nil {
+			log.Fatalln(err)
 		}
-		link, exists := s.Find("dd > a").Attr("href")
-		if !exists {
-			log.Printf("failed to get link for《%s》\n", name)
-			return
+
+		var originalName string
+		var sel *goquery.Selection
+		switch MediaType {
+		case "book":
+			originalName = doc.Find("#wrapper > h1 > span").Text()
+			sel = doc.Find("#db-rec-section > div > dl")
+		case "movie":
+			originalName = doc.Find("#content > h1 > span:nth-child(1)").Text()
+			sel = doc.Find("#recommendations > div > dl")
 		}
-		var rate float64
-		rateStr := s.Find("dd > span").Text()
-		if rateStr != "" {
-			rate, _ = strconv.ParseFloat(s.Find("dd > span").Text(), 64)
+
+		if sel.Length() == 0 {
+			log.Printf("get recommended %ss for《%s》failed, link: %s\n", MediaType, originalName, path)
+			continue
 		}
-		medias = append(medias, &MediaInfo{
-			ID:   getNum(link),
-			Name: name,
-			Link: link,
-			Rate: rate,
+
+		medias := make([]*MediaInfo, 0, sel.Length())
+		sel.Each(func(i int, s *goquery.Selection) {
+			name := strings.TrimSpace(s.Find("dd > a").Text())
+			if name == "" {
+				return
+			}
+			link, exists := s.Find("dd > a").Attr("href")
+			if !exists {
+				log.Printf("failed to get link for《%s》\n", name)
+				return
+			}
+			var rate float64
+			rateStr := s.Find("dd > span").Text()
+			if rateStr != "" {
+				rate, _ = strconv.ParseFloat(s.Find("dd > span").Text(), 64)
+			}
+			medias = append(medias, &MediaInfo{
+				ID:   getNum(link),
+				Name: name,
+				Link: link,
+				Rate: rate,
+			})
 		})
-	})
 
-	ch <- &Media{
-		OriginalMedia: &MediaInfo{
-			ID:   getNum(path),
-			Name: originalName,
-			Link: path,
-		},
-		RecommendedMedias: medias,
+		res = append(res, &Media{
+			OriginalMedia: &MediaInfo{
+				ID:   getNum(path),
+				Name: originalName,
+				Link: path,
+			},
+			RecommendedMedias: medias,
+		})
 	}
+	ch <- res
 }
 
 func getMediaInfoSerial(path string) *Media {
