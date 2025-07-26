@@ -5,9 +5,9 @@ user:
 result:
   media_type: movie  # movie or book
   mention:
-    min: 40
+    min: 0
   score:
-    min: 7.9
+    min: 0
   sort: mention # score or mention
 
 target_user: 
